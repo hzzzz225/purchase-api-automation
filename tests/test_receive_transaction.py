@@ -1,7 +1,7 @@
 import pytest
 from utils.test_data import build_order_data
 
-pytestmark = pytest.mark.ui
+pytestmark = pytest.mark.api
 
 def test_receive_order_and_duplicate_receive(purchase_api, db):
     # 1. 创建采购订单

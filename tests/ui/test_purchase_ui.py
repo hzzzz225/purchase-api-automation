@@ -17,9 +17,9 @@ from tests.ui.pages.purchase_page import (
     PurchasePage
 )
 
-pytestmark = pytest.mark.ui
+from config.settings import BASE_URL, USERNAME, PASSWORD
 
-BASE_URL = "http://127.0.0.1:8000"
+pytestmark = pytest.mark.ui
 
 SUPPLIER_ID = 1001
 PRODUCT_ID = 2001
@@ -146,8 +146,8 @@ def test_purchase_order_ui_lifecycle(
         login_page = LoginPage(driver)
 
         result = login_page.login(
-            "tester",
-            "Test1234"
+            USERNAME,
+            PASSWORD
         )
 
         assert result == "登录成功"

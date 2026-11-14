@@ -8,3 +8,6 @@ python-dotenv
 requests
 pytest
 pytest-html
+
+selenium==4.52.0
+allure-pytest

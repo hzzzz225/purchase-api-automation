@@ -5,7 +5,7 @@ import pytest
 from config.settings import BASE_URL, REQUEST_TIMEOUT
 from utils.test_data import build_order_data
 
-pytestmark = pytest.mark.ui
+pytestmark = pytest.mark.api
 
 @pytest.mark.parametrize(
     "invalid_case",

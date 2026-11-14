@@ -25,40 +25,37 @@
 - 采购订单状态流转
 - 库存及库存流水验证
 ## 4. 环境要求
+
 - Python 3.10+
-- pip
+- MySQL 8.0+
+- Google Chrome
+- Allure Commandline（生成 Allure 报告时需要）
 
-## 5. 安装与启动
+## 5. 环境配置
 
-在项目根目录打开终端：
+1. 安装项目依赖：
 
-```bash
-python -m venv .venv
-```
+   pip install -r requirements.txt
 
-Windows PowerShell：
-```powershell
-.venv\Scripts\Activate.ps1
-```
+2. 复制 .env.example 为 .env。
 
-macOS / Linux：
-```bash
-source .venv/bin/activate
-```
+3. 根据本地环境填写 MySQL 数据库账号密码及测试账号。
 
-安装依赖并启动：
-```bash
-pip install -r requirements.txt
+4. 确保 MySQL 已启动，并已创建 purchase_test 数据库。
+
+## 6. 启动项目
+
 uvicorn app.main:app --reload
-```
 
-访问：
-- 健康检查：http://127.0.0.1:8000/health
-- Swagger 接口文档：http://127.0.0.1:8000/docs
+访问 Swagger：
 
-首次启动会自动创建 SQLite 数据库 `purchase_lab.db` 和基础测试数据。
+http://127.0.0.1:8000/docs
 
-## 6. 测试账号
+采购管理页面：
+
+http://127.0.0.1:8000/ui
+
+测试账号
 | 角色 | 用户名 | 密码 |
 |---|---|---|
 | 普通测试用户 | tester | Test1234 |

@@ -4,7 +4,7 @@ import pytest
 
 from utils.test_data import build_order_data
 
-pytestmark = pytest.mark.ui
+pytestmark = pytest.mark.api
 
 @allure.feature("采购订单管理")
 @allure.story("采购订单数量边界测试")
