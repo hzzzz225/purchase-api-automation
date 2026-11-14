@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Selenium 自动化练习页面</title>
+</head>
+<body>
+    <h1 id="page-title">采购管理系统登录</h1>
+
+    <div>
+        <label for="username">用户名：</label>
+        <input id="username" name="username" type="text">
+    </div>
+
+    <div>
+        <label for="password">密码：</label>
+        <input id="password" name="password" type="password">
+    </div>
+
+    <button id="login-btn" class="primary-btn">
+        登录
+    </button>
+
+    <p id="login-result"></p>
+
+    <hr>
+
+    <h2>采购订单操作</h2>
+
+    <input id="product-name" placeholder="请输入商品名称">
+
+    <input id="quantity" type="number" placeholder="请输入采购数量">
+
+    <button id="create-btn">创建订单</button>
+
+    <p id="order-result"></p>
+
+    <script>
+        document.getElementById("login-btn").onclick = function () {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            if (username === "tester" && password === "123456") {
+                document.getElementById("login-result").innerText =
+                    "登录成功";
+            } else {
+                document.getElementById("login-result").innerText =
+                    "用户名或密码错误";
+            }
+        };
+
+        document.getElementById("create-btn").onclick = function () {
+            const name = document.getElementById("product-name").value;
+            const quantity = document.getElementById("quantity").value;
+
+            const result = document.getElementById("order-result");
+
+            result.innerText = "正在创建订单...";
+
+            setTimeout(function () {
+                if (name && Number(quantity) > 0) {
+                    result.innerText =
+                        "订单创建成功：" + name + "，数量：" + quantity;
+                } else {
+                    result.innerText = "订单创建失败：参数错误";
+                }
+            }, 1500);
+        };
+    </script>
+</body>
+</html>

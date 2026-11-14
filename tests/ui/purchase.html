@@ -1,0 +1,338 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>采购管理自动化测试平台</title>
+    <style>
+        body {
+            font-family: Arial, "Microsoft YaHei", sans-serif;
+            max-width: 850px;
+            margin: 35px auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+
+        .panel {
+            background: white;
+            padding: 24px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        h1, h2 { color: #263445; }
+
+        label {
+            display: block;
+            margin-top: 14px;
+            margin-bottom: 6px;
+        }
+
+        input, select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            margin-top: 18px;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 4px;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f1f5f9;
+            min-height: 20px;
+            white-space: pre-wrap;
+        }
+
+        #purchase-panel { display: none; }
+    </style>
+</head>
+
+<body>
+
+<h1>采购管理自动化测试平台</h1>
+
+<div class="panel" id="login-panel">
+    <h2>用户登录</h2>
+
+    <label for="username">用户名</label>
+    <input id="username" value="tester">
+
+    <label for="password">密码</label>
+    <input id="password" type="password" value="Test1234">
+
+    <button id="login-btn">登录</button>
+
+    <div id="login-result" class="result"></div>
+</div>
+
+<div class="panel" id="purchase-panel">
+    <h2>创建采购订单</h2>
+
+    <label for="supplier-id">供应商</label>
+    <select id="supplier-id"></select>
+
+    <label for="product-id">商品</label>
+    <select id="product-id"></select>
+
+    <label for="quantity">采购数量</label>
+    <input id="quantity" type="number" min="1" value="10">
+
+    <label for="unit-price">采购单价</label>
+    <input id="unit-price" type="number" readonly>
+
+    <div id="stock-info" class="result"></div>
+
+    <label for="remark">订单备注</label>
+    <input id="remark" placeholder="请输入唯一测试备注">
+
+    <button id="create-btn">创建采购订单</button>
+
+    <div id="order-result" class="result"></div>
+
+    <h2>订单状态流转</h2>
+
+    <p>订单编号：<span id="order-id">暂无</span></p>
+    <p>订单状态：<span id="order-status">暂无</span></p>
+
+    <button id="approve-btn" disabled>审核订单</button>
+    <button id="receive-btn" disabled>采购入库</button>
+
+    <div id="action-result" class="result"></div>
+</div>
+
+<script>
+    let accessToken = null;
+    let currentOrderId = null;
+    let productsData = [];
+
+    const $ = (id) => document.getElementById(id);
+
+    async function apiRequest(url, options = {}) {
+        const headers = {
+            "Content-Type": "application/json",
+            ...(accessToken
+                ? {"Authorization": `Bearer ${accessToken}`}
+                : {}),
+            ...(options.headers || {})
+        };
+
+        const response = await fetch(url, {
+            ...options,
+            headers
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(
+                data.detail || data.message || `HTTP ${response.status}`
+            );
+        }
+
+        return data;
+    }
+
+    // 登录
+    $("login-btn").addEventListener("click", async () => {
+        try {
+            const result = await apiRequest("/api/auth/login", {
+                method: "POST",
+                body: JSON.stringify({
+                    username: $("username").value,
+                    password: $("password").value
+                })
+            });
+
+            accessToken = result.access_token;
+
+            $("login-result").textContent = "登录成功";
+
+            await loadMasterData();
+
+            $("purchase-panel").style.display = "block";
+
+        } catch (error) {
+            $("login-result").textContent =
+                "登录失败：" + error.message;
+        }
+    });
+
+    // 加载供应商和商品
+    async function loadMasterData() {
+        const [supplierResult, productResult] = await Promise.all([
+            apiRequest("/api/suppliers"),
+            apiRequest("/api/products")
+        ]);
+
+        const supplierSelect = $("supplier-id");
+        supplierSelect.innerHTML = "";
+
+        supplierResult.items.forEach(item => {
+            const option = document.createElement("option");
+            option.value = item.id;
+            option.textContent = `${item.name} (${item.id})`;
+            supplierSelect.appendChild(option);
+        });
+
+        productsData = productResult.items;
+
+        const productSelect = $("product-id");
+        productSelect.innerHTML = "";
+
+        productsData.forEach(item => {
+            const option = document.createElement("option");
+            option.value = item.id;
+            option.textContent = `${item.name} (${item.sku})`;
+            productSelect.appendChild(option);
+        });
+
+        if (productsData.length > 0) {
+            productSelect.value = productsData[0].id;
+            updateSelectedProduct();
+        }
+    }
+
+    // 选择商品后动态填入单价和库存
+    function updateSelectedProduct() {
+        const productId = Number($("product-id").value);
+
+        const product = productsData.find(
+            item => item.id === productId
+        );
+
+        if (!product) return;
+
+        $("unit-price").value = product.unit_price;
+
+        $("stock-info").textContent =
+            `当前库存：${product.stock}`;
+    }
+
+    $("product-id").addEventListener(
+        "change",
+        updateSelectedProduct
+    );
+
+    // 创建采购订单
+    $("create-btn").addEventListener("click", async () => {
+        try {
+            const supplierId = Number($("supplier-id").value);
+            const productId = Number($("product-id").value);
+            const quantity = Number($("quantity").value);
+            const unitPrice = Number($("unit-price").value);
+            const remark = $("remark").value.trim();
+
+            if (!remark) {
+                throw new Error("订单备注不能为空");
+            }
+
+            const result = await apiRequest(
+                "/api/purchase-orders",
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        supplier_id: supplierId,
+                        items: [{
+                            product_id: productId,
+                            quantity: quantity,
+                            unit_price: unitPrice
+                        }],
+                        remark: remark
+                    })
+                }
+            );
+
+            const order = result.data;
+
+            currentOrderId = order.id;
+
+            $("order-id").textContent = order.id;
+            $("order-status").textContent = order.status;
+
+            $("order-result").textContent =
+                `订单创建成功，订单号：${order.id}，金额：${order.total_amount}`;
+
+            $("approve-btn").disabled = false;
+            $("receive-btn").disabled = true;
+
+        } catch (error) {
+            $("order-result").textContent =
+                "创建失败：" + error.message;
+        }
+    });
+
+    // 审核订单
+    $("approve-btn").addEventListener("click", async () => {
+        try {
+            if (!currentOrderId) {
+                throw new Error("请先创建订单");
+            }
+
+            const result = await apiRequest(
+                `/api/purchase-orders/${currentOrderId}/approve`,
+                {method: "POST"}
+            );
+
+            $("order-status").textContent =
+                result.data.status;
+
+            $("action-result").textContent = "订单审核成功";
+
+            $("approve-btn").disabled = true;
+            $("receive-btn").disabled = false;
+
+        } catch (error) {
+            $("action-result").textContent =
+                "审核失败：" + error.message;
+        }
+    });
+
+    // 采购入库
+    $("receive-btn").addEventListener("click", async () => {
+        try {
+            if (!currentOrderId) {
+                throw new Error("请先创建订单");
+            }
+
+            const result = await apiRequest(
+                `/api/purchase-orders/${currentOrderId}/receive`,
+                {method: "POST"}
+            );
+
+            $("order-status").textContent =
+                result.data.status;
+
+            $("action-result").textContent = "采购入库成功";
+
+            $("receive-btn").disabled = true;
+
+            // 重新查询商品库存
+            await loadMasterData();
+
+        } catch (error) {
+            $("action-result").textContent =
+                "入库失败：" + error.message;
+        }
+    });
+</script>
+
+</body>
+</html>
