@@ -1,13 +1,34 @@
-# 模拟 ERP 采购 API（自动化测试教学环境）
+# 模拟 ERP 采购 API
+## 1. 项目介绍
 
-这是一个专门用于学习接口自动化测试的轻量被测服务，不是生产 ERP，也不代表任何企业系统。
-它包含真实的业务状态流转和 SQLite 数据持久化，不是固定 JSON 的 Mock。
+基于模拟采购业务系统构建的自动化测试项目，
+覆盖采购订单创建、审核、入库、取消等业务流程。
 
-## 1. 环境要求
+## 2. 技术栈
+
+- Python
+- Pytest
+- Requests
+- Selenium
+- PyMySQL
+- MySQL
+- Allure
+- pytest-html
+
+## 3. 测试范围
+
+- API 接口测试
+- UI 自动化测试
+- 数据库一致性校验
+- 正常场景与异常场景
+- 边界值测试
+- 采购订单状态流转
+- 库存及库存流水验证
+## 4. 环境要求
 - Python 3.10+
 - pip
 
-## 2. 安装与启动
+## 5. 安装与启动
 
 在项目根目录打开终端：
 
@@ -37,20 +58,12 @@ uvicorn app.main:app --reload
 
 首次启动会自动创建 SQLite 数据库 `purchase_lab.db` 和基础测试数据。
 
-## 3. 测试账号
+## 6. 测试账号
 | 角色 | 用户名 | 密码 |
 |---|---|---|
 | 普通测试用户 | tester | Test1234 |
-| 管理员演示账号 | admin | Admin1234 |
 
-当前版本使用演示 Token。两个账号用于练习鉴权流程；暂未实现细粒度角色权限控制，不能把它当作真实权限系统。
-
-## 4. 核心业务流程
-创建订单（PENDING） -> 审核（APPROVED） -> 入库（RECEIVED）。
-订单可在 PENDING 状态修改；PENDING 或 APPROVED 状态可取消。
-只有 APPROVED 订单允许入库；重复入库会返回 409，避免库存重复增加。
-
-## 5. 主要接口
+## 7. 主要接口
 | 方法 | 路径 | 用途 |
 |---|---|---|
 | POST | `/api/auth/login` | 获取 Token |
@@ -68,24 +81,32 @@ uvicorn app.main:app --reload
 除 `/health` 和登录接口外，其余接口均需请求头：
 `Authorization: Bearer training-token`
 
-## 6. 创建订单请求示例
+## 8. 项目特点
 
-```json
-{
-  "supplier_id": 1001,
-  "items": [
-    {"product_id": 2001, "quantity": 10, "unit_price": 25.0},
-    {"product_id": 2002, "quantity": 2, "unit_price": 89.0}
-  ],
-  "remark": "自动化测试采购订单"
-}
-```
+- Pytest Fixture 管理测试资源
+- Page Object 模式封装 UI 页面
+- API 客户端统一封装
+- UUID 测试数据隔离
+- 自动清理测试数据
+- MySQL 数据一致性校验
+- Allure 自动化测试报告
 
-金额由服务端计算：10*25 + 2*89 = 428.00。
+## 9. 执行测试
 
-## 7. 重要说明
-- 这是教学环境，数据保存在本地 SQLite 文件。
-- 删除 `purchase_lab.db` 并重新启动服务，可重置全部数据。
-- 第一版使用 SQLite 降低环境门槛；后续学习 SQL 校验时再切换 MySQL。
-- 当前演示 Token 不含真实密码哈希、刷新机制或细粒度 RBAC。
-- 采购入库按订单明细全量入库，暂不支持部分入库。
+运行 API 测试：
+
+    pytest -v -s tests -m api
+
+运行 UI 测试：
+
+    pytest -v -s tests -m ui
+
+运行全部测试：
+
+    pytest -v -s tests
+
+##10. 测试报告
+
+Allure：
+
+    allure serve reports/allure-results
